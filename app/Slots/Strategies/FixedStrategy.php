@@ -3,46 +3,49 @@
 namespace App\Slots\Strategies;
 
 use App\Interfaces\SlotGenerationStrategyInterface;
-use App\Interfaces\TimetableInterface;
 use App\Models\Resource;
-use App\Models\Booking;
-use DateTimeImmutable;
-use DateInterval;
+use Carbon\Carbon;
 
 class FixedStrategy implements SlotGenerationStrategyInterface
 {
-    public function getNextSlots(TimetableInterface $timetable, Resource $resource, \DateTimeInterface $from, int $count, bool $onlyToday = true): array {
+    public function generateSlots(Resource $resource, Carbon $date): array
+    {
         $slots = [];
-        $slotMinutes = $resource->resource_config->slot_duration_minutes;
-        $date = $from;
-        $daysChecked = 0;
-        while (count($slots) < $count && $daysChecked < 365) {
-            $intervals = $timetable->getWorkingIntervalsForDate($date);
-            foreach ($intervals as $int) {
-                $cursor = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $int['start']->format('Y-m-d H:i:s'));
-                while ($cursor < $int['end']) {
-                    $slotEnd = $cursor->add(new DateInterval("PT{$slotMinutes}M"));
-                    if ($slotEnd > $int['end']) break;
-                    if ($slotEnd <= $from) {
-                        $cursor = $slotEnd;
-                        continue;
-                    }
-                    $exists = Booking::where('resource_id', $resource->id)
-                        ->where('start','<',$slotEnd->format('Y-m-d H:i:s'))
-                        ->where('end','>',$cursor->format('Y-m-d H:i:s'))
-                        ->whereIn('status',['confirmed','pending_confirmation','awaiting_payment','created'])
-                        ->exists();
-                    if (!$exists) {
-                        $slots[] = ['start'=>$cursor,'end'=>$slotEnd];
-                        if (count($slots) >= $count) return $slots;
-                    }
-                    $cursor = $slotEnd;
+        $config = $resource->resource_config;
+        $duration = $config['slot_duration_minutes'] ?? 60;
+
+        $timetable = $resource->timetable;
+        if (!$timetable) return [];
+
+        $tt = $timetable->type === 'static'
+            ? new \App\Timetables\StaticTimetable($timetable->payload)
+            : new \App\Timetables\DynamicTimetable($timetable);
+
+        $hours = $tt->getWorkingHoursForDate($date);
+        if (!$hours) return [];
+
+        $start = Carbon::parse($date->toDateString() . ' ' . $hours['start']);
+        $end = Carbon::parse($date->toDateString() . ' ' . $hours['end']);
+
+        $breaks = $tt->getBreaksForDate($date);
+
+        while ($start->copy()->addMinutes($duration) <= $end) {
+            $slotEnd = $start->copy()->addMinutes($duration);
+            $conflict = false;
+            foreach ($breaks as $b) {
+                $bStart = Carbon::parse($date->toDateString() . ' ' . $b['start']);
+                $bEnd = Carbon::parse($date->toDateString() . ' ' . $b['end']);
+                if ($start < $bEnd && $slotEnd > $bStart) {
+                    $conflict = true;
+                    break;
                 }
             }
-            if ($onlyToday) break;
-            $date = $date->add(new DateInterval('P1D'));
-            $daysChecked++;
+            if (!$conflict) {
+                $slots[] = ['start' => $start->copy(), 'end' => $slotEnd];
+            }
+            $start->addMinutes($duration);
         }
+
         return $slots;
     }
 }

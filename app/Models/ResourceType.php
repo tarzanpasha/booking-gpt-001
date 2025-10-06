@@ -3,16 +3,25 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use App\Casts\ResourceConfigCast;
 
 class ResourceType extends Model
 {
-    protected $table = 'resource_types';
-    protected $fillable = ['company_id','type','name','description','options','resource_config'];
-    protected $casts = [
-        'options' => 'array',
-        'resource_config' => ResourceConfigCast::class,
+    protected $fillable = [
+        'company_id',
+        'type',
+        'name',
+        'description',
+        'options',
+        'resource_config',
     ];
 
-    public function resources() { return $this->hasMany(Resource::class); }
+    protected $casts = [
+        'options' => 'array',
+        'resource_config' => 'array',
+    ];
+
+    public function resources()
+    {
+        return $this->hasMany(Resource::class);
+    }
 }

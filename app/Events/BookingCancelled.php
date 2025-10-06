@@ -2,10 +2,18 @@
 
 namespace App\Events;
 
-use Illuminate\Queue\SerializesModels;
 use App\Models\Booking;
+use Illuminate\Foundation\Events\Dispatchable;
+use Illuminate\Queue\SerializesModels;
 
-class BookingCancelled {
-    use SerializesModels;
-    public function __construct(public Booking $booking) {}
+class BookingCancelled
+{
+    use Dispatchable, SerializesModels;
+
+    public Booking $booking;
+
+    public function __construct(Booking $booking)
+    {
+        $this->booking = $booking;
+    }
 }
