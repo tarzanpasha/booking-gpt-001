@@ -6,19 +6,35 @@ use Illuminate\Database\Eloquent\Model;
 
 class Booking extends Model
 {
-    protected $table = 'bookings';
     protected $fillable = [
-        'company_id','resource_id','timetable_id','is_group_booking','start','end','status','reason','meta','participants_count'
-    ];
-    protected $casts = [
-        'meta' => 'array',
-        'is_group_booking' => 'boolean',
-        'start' => 'datetime',
-        'end' => 'datetime',
+        'company_id',
+        'resource_id',
+        'timetable_id',
+        'is_group_booking',
+        'start',
+        'end',
+        'status',
+        'reason',
     ];
 
-    public function participants() {
-        return $this->hasMany(Bookingable::class, 'booking_id');
+    protected $casts = [
+        'start' => 'datetime',
+        'end' => 'datetime',
+        'is_group_booking' => 'boolean',
+    ];
+
+    public function resource()
+    {
+        return $this->belongsTo(Resource::class);
     }
-    public function resource() { return $this->belongsTo(Resource::class,'resource_id'); }
+
+    public function timetable()
+    {
+        return $this->belongsTo(Timetable::class);
+    }
+
+    public function bookingables()
+    {
+        return $this->morphMany(Bookingable::class, 'bookingable');
+    }
 }

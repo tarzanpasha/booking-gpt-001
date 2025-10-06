@@ -3,24 +3,25 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use App\Services\BookingService;
-use App\Console\Commands\SendBookingRemindersCommand;
 
 class BookingServiceProvider extends ServiceProvider
 {
-    public function register()
+    public function register(): void
     {
-        $this->app->singleton(BookingService::class, function ($app) {
-            return new BookingService($app['db'], $app['cache.store']);
-        });
+        //
     }
 
-    public function boot()
+    public function boot(): void
     {
         if ($this->app->runningInConsole()) {
             $this->commands([
-                SendBookingRemindersCommand::class,
+                \App\Console\Commands\SeedBookingDemoCommand::class,
+                \App\Console\Commands\ShowBookingDemoCurlCommand::class,
+                \App\Console\Commands\RunBookingDemoActionsCommand::class,
+                \App\Console\Commands\SendBookingRemindersCommand::class,
             ]);
         }
+
+        $this->loadRoutesFrom(base_path('routes/booking.php'));
     }
 }

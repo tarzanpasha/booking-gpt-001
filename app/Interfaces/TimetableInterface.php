@@ -2,11 +2,10 @@
 
 namespace App\Interfaces;
 
+use Carbon\Carbon;
+
 interface TimetableInterface
 {
-    /**
-     * @param \DateTimeInterface $date
-     * @return array each element: ['start' => DateTimeImmutable, 'end' => DateTimeImmutable]
-     */
-    public function getWorkingIntervalsForDate(\DateTimeInterface $date): array;
+    public function getWorkingHoursForDate(Carbon $date): ?array;
+    public function getBreaksForDate(Carbon $date): array;
 }

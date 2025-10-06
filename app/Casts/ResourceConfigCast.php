@@ -7,18 +7,16 @@ use App\ValueObjects\ResourceConfig;
 
 class ResourceConfigCast implements CastsAttributes
 {
-    public function get($model, string $key, $value, array $attributes) {
-        $arr = $value ? json_decode($value, true) : [];
-        return ResourceConfig::fromArray($arr);
+    public function get($model, string $key, $value, array $attributes)
+    {
+        return new ResourceConfig(json_decode($value ?? '{}', true));
     }
 
-    public function set($model, string $key, $value, array $attributes) {
+    public function set($model, string $key, $value, array $attributes)
+    {
         if ($value instanceof ResourceConfig) {
-            return json_encode($value->jsonSerialize());
+            return json_encode($value->toArray());
         }
-        if (is_array($value)) {
-            return json_encode($value);
-        }
-        return $value;
+        return json_encode($value);
     }
 }
