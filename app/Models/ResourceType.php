@@ -12,12 +12,12 @@ class ResourceType extends Model
         'name',
         'description',
         'options',
-        'resource_config',
+        'resource_config'
     ];
 
     protected $casts = [
         'options' => 'array',
-        'resource_config' => 'array',
+        'resource_config' => \App\Casts\ResourceConfigCast::class,
     ];
 
     public function resources()

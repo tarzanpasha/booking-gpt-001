@@ -3,28 +3,58 @@
 namespace App\Timetables;
 
 use App\Interfaces\TimetableInterface;
-use App\Models\Timetable;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 
 class DynamicTimetable implements TimetableInterface
 {
-    protected Timetable $timetable;
+    protected array $dates;
 
-    public function __construct(Timetable $timetable)
+    public function __construct(array $dates)
     {
-        $this->timetable = $timetable;
+        $this->dates = $dates;
     }
 
     public function getWorkingHoursForDate(Carbon $date): ?array
     {
-        $day = $this->timetable->dates()->where('date', $date->toDateString())->first();
-        if (!$day) return null;
-        return ['start' => $day->start, 'end' => $day->end];
+        $key = $date->format('Y-m-d');
+        return $this->dates[$key]['working_hours'] ?? null;
     }
 
-    public function getBreaksForDate(Carbon $date): array
+    public function getBreaksForDate(Carbon $date): Collection
     {
-        $day = $this->timetable->dates()->where('date', $date->toDateString())->first();
-        return $day ? $day->breaks : [];
+        $key = $date->format('Y-m-d');
+        return collect($this->dates[$key]['breaks'] ?? []);
+    }
+
+    public function getNextAvailableSlots(Carbon $from, int $count = 10, bool $onlyToday = true): array
+    {
+        $date = $from->copy();
+        $slots = [];
+
+        while (count($slots) < $count) {
+            $hours = $this->getWorkingHoursForDate($date);
+            if (!$hours) {
+                if ($onlyToday) break;
+                $date->addDay();
+                continue;
+            }
+
+            $start = Carbon::parse($hours['start'], $date->timezone)->setDateFrom($date);
+            $end = Carbon::parse($hours['end'], $date->timezone)->setDateFrom($date);
+            $duration = 60;
+
+            while ($start->lt($end) && count($slots) < $count) {
+                $slotEnd = $start->copy()->addMinutes($duration);
+                if ($slotEnd->gt($end)) break;
+                $slots[] = ['start' => $start->toDateTimeString(), 'end' => $slotEnd->toDateTimeString()];
+                $start->addMinutes($duration);
+            }
+
+            if ($onlyToday) break;
+            $date->addDay();
+        }
+
+        return $slots;
     }
 }

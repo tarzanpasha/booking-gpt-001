@@ -5,44 +5,27 @@ namespace App\Slots\Strategies;
 use App\Interfaces\SlotGenerationStrategyInterface;
 use App\Models\Resource;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 
 class DynamicStrategy implements SlotGenerationStrategyInterface
 {
-    public function generateSlots(Resource $resource, Carbon $date): array
+    public function generateSlots(Resource $resource, Carbon $date): Collection
     {
-        $slots = [];
-        $config = $resource->resource_config;
-        $duration = $config['slot_duration_minutes'] ?? 60;
-
         $timetable = $resource->timetable;
-        if (!$timetable) return [];
+        $hours = $timetable->getWorkingHoursForDate($date);
 
-        $tt = $timetable->type === 'static'
-            ? new \App\Timetables\StaticTimetable($timetable->payload)
-            : new \App\Timetables\DynamicTimetable($timetable);
+        if (!$hours) return collect();
 
-        $hours = $tt->getWorkingHoursForDate($date);
-        if (!$hours) return [];
+        $start = Carbon::parse($hours['start'], $date->timezone)->setDateFrom($date);
+        $end = Carbon::parse($hours['end'], $date->timezone)->setDateFrom($date);
 
-        $start = Carbon::parse($date->toDateString() . ' ' . $hours['start']);
-        $end = Carbon::parse($date->toDateString() . ' ' . $hours['end']);
+        $duration = $resource->resource_config->slot_duration_minutes ?? 60;
+        $slots = collect();
 
-        $breaks = $tt->getBreaksForDate($date);
-
-        while ($start->copy()->addMinutes($duration) <= $end) {
+        while ($start->lt($end)) {
             $slotEnd = $start->copy()->addMinutes($duration);
-            $conflict = false;
-            foreach ($breaks as $b) {
-                $bStart = Carbon::parse($date->toDateString() . ' ' . $b['start']);
-                $bEnd = Carbon::parse($date->toDateString() . ' ' . $b['end']);
-                if ($start < $bEnd && $slotEnd > $bStart) {
-                    $conflict = true;
-                    break;
-                }
-            }
-            if (!$conflict) {
-                $slots[] = ['start' => $start->copy(), 'end' => $slotEnd];
-            }
+            if ($slotEnd->gt($end)) break;
+            $slots->push(['start' => $start->toDateTimeString(), 'end' => $slotEnd->toDateTimeString()]);
             $start->addMinutes($duration);
         }
 

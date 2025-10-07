@@ -52,9 +52,11 @@ return [
     */
 
     'channels' => [
+    'booking' => [            'driver' => 'single',            'path' => storage_path('logs/booking.log'),            'level' => 'info',        ],
         'stack' => [
             'driver' => 'stack',
             'channels' => ['single'],
+    'booking' => [            'driver' => 'single',            'path' => storage_path('logs/booking.log'),            'level' => 'info',        ],
             'ignore_exceptions' => false,
         ],
 

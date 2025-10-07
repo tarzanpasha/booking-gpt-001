@@ -27,14 +27,4 @@ class Booking extends Model
     {
         return $this->belongsTo(Resource::class);
     }
-
-    public function timetable()
-    {
-        return $this->belongsTo(Timetable::class);
-    }
-
-    public function bookingables()
-    {
-        return $this->morphMany(Bookingable::class, 'bookingable');
-    }
 }

@@ -3,25 +3,22 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Route;
 
 class BookingServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        //
+        // Здесь можно регистрировать сервисы
     }
 
     public function boot(): void
     {
-        if ($this->app->runningInConsole()) {
-            $this->commands([
-                \App\Console\Commands\SeedBookingDemoCommand::class,
-                \App\Console\Commands\ShowBookingDemoCurlCommand::class,
-                \App\Console\Commands\RunBookingDemoActionsCommand::class,
-                \App\Console\Commands\SendBookingRemindersCommand::class,
-            ]);
-        }
-
-        $this->loadRoutesFrom(base_path('routes/booking.php'));
+        Route::middleware('api')
+            ->prefix('api')
+            ->group(base_path('routes/booking.php'));
     }
 }
+
+        // Регистрируем слушатели событий бронирования
+        $this->app->register(\App\Providers\EventServiceProvider::class);
