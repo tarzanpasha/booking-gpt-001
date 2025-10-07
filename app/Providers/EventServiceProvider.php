@@ -2,37 +2,58 @@
 
 namespace App\Providers;
 
-use Illuminate\Auth\Events\Registered;
-use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
-use Illuminate\Support\Facades\Event;
+use App\Events\{
+    BookingCreated,
+    BookingPendingConfirmation,
+    BookingConfirmed,
+    BookingRejected,
+    BookingCancelled,
+    BookingRescheduled,
+    BookingReminder
+};
+use App\Listeners\{
+    LogBookingActivityListener,
+    SendBookingReminderListener,
+    NotifyAdminOfBookingListener
+};
 
 class EventServiceProvider extends ServiceProvider
 {
-    /**
-     * The event to listener mappings for the application.
-     *
-     * @var array<class-string, array<int, class-string>>
-     */
     protected $listen = [
-        Registered::class => [
-            SendEmailVerificationNotification::class,
+        BookingCreated::class => [
+            LogBookingActivityListener::class,
+            NotifyAdminOfBookingListener::class,
+        ],
+        BookingPendingConfirmation::class => [
+            LogBookingActivityListener::class,
+            NotifyAdminOfBookingListener::class,
+        ],
+        BookingConfirmed::class => [
+            LogBookingActivityListener::class,
+            NotifyAdminOfBookingListener::class,
+        ],
+        BookingRejected::class => [
+            LogBookingActivityListener::class,
+            NotifyAdminOfBookingListener::class,
+        ],
+        BookingCancelled::class => [
+            LogBookingActivityListener::class,
+            NotifyAdminOfBookingListener::class,
+        ],
+        BookingRescheduled::class => [
+            LogBookingActivityListener::class,
+            NotifyAdminOfBookingListener::class,
+        ],
+        BookingReminder::class => [
+            LogBookingActivityListener::class,
+            SendBookingReminderListener::class,
+            NotifyAdminOfBookingListener::class,
         ],
     ];
 
-    /**
-     * Register any events for your application.
-     */
     public function boot(): void
     {
-        //
-    }
-
-    /**
-     * Determine if events and listeners should be automatically discovered.
-     */
-    public function shouldDiscoverEvents(): bool
-    {
-        return false;
+        parent::boot();
     }
 }

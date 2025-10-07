@@ -15,8 +15,8 @@ class ResourceConfigCast implements CastsAttributes
     public function set($model, string $key, $value, array $attributes)
     {
         if ($value instanceof ResourceConfig) {
-            return json_encode($value->toArray());
+            return [$key => json_encode($value->toArray())];
         }
-        return json_encode($value);
+        return [$key => json_encode($value)];
     }
 }

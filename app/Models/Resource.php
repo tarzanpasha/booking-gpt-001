@@ -17,17 +17,12 @@ class Resource extends Model
     protected $casts = [
         'options' => 'array',
         'payload' => 'array',
-        'resource_config' => 'array',
+        'resource_config' => \App\Casts\ResourceConfigCast::class,
     ];
 
     public function type()
     {
         return $this->belongsTo(ResourceType::class, 'resource_type_id');
-    }
-
-    public function timetable()
-    {
-        return $this->hasOne(Timetable::class);
     }
 
     public function bookings()

@@ -5,18 +5,21 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
-    public function up(): void {
+    public function up(): void
+    {
         Schema::create('timetables', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('company_id');
-            $table->foreignId('resource_id')->constrained()->cascadeOnDelete();
-            $table->string('name')->nullable();
-            $table->enum('type',['static','dynamic']);
-            $table->json('payload')->nullable();
+            $table->unsignedBigInteger('resource_id');
+            $table->string('type')->default('static');
+            $table->json('config');
             $table->timestamps();
+
+            $table->foreign('resource_id')->references('id')->on('resources')->cascadeOnDelete();
         });
     }
-    public function down(): void {
+
+    public function down(): void
+    {
         Schema::dropIfExists('timetables');
     }
 };

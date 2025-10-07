@@ -5,15 +5,17 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
-    public function up(): void {
+    public function up(): void
+    {
         Schema::create('bookingables', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('booking_id')->constrained()->cascadeOnDelete();
-            $table->morphs('bookingable');
-            $table->timestamps();
+            $table->unsignedBigInteger('booking_id');
+            $table->morphs('bookingable'); // создаст bookingable_id и bookingable_type
+            $table->primary(['booking_id', 'bookingable_id', 'bookingable_type']);
         });
     }
-    public function down(): void {
+
+    public function down(): void
+    {
         Schema::dropIfExists('bookingables');
     }
 };

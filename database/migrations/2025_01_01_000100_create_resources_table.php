@@ -5,18 +5,23 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
-    public function up(): void {
+    public function up(): void
+    {
         Schema::create('resources', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('company_id');
-            $table->foreignId('resource_type_id')->constrained()->cascadeOnDelete();
+            $table->unsignedBigInteger('resource_type_id');
             $table->json('options')->nullable();
             $table->json('payload')->nullable();
             $table->json('resource_config')->nullable();
             $table->timestamps();
+
+            $table->foreign('resource_type_id')->references('id')->on('resource_types')->cascadeOnDelete();
         });
     }
-    public function down(): void {
+
+    public function down(): void
+    {
         Schema::dropIfExists('resources');
     }
 };

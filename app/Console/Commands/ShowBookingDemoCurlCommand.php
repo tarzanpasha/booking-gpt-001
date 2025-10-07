@@ -6,26 +6,25 @@ use Illuminate\Console\Command;
 
 class ShowBookingDemoCurlCommand extends Command
 {
-    protected $signature = 'booking:demo-curl';
-    protected $description = 'Show example curl commands for demo bookings';
+    protected $signature = 'booking:show-demo-curl';
+    protected $description = 'Показывает примеры curl-запросов для тестирования API бронирования';
 
-    public function handle()
+    public function handle(): int
     {
-        $this->info("=== Иван (fixed, confirm required) ===");
-        $this->line("curl -X POST http://127.0.0.1:8000/api/resources/1/bookings -H 'Content-Type: application/json' -d '{\"start\":\"2025-10-01 10:00:00\",\"end\":\"2025-10-01 11:00:00\"}'");
-        $this->line("curl -X POST http://127.0.0.1:8000/api/bookings/1/confirm");
-        $this->newLine();
+        $this->info("📘 Примеры API-запросов:");
 
-        $this->info("=== Мария (dynamic, auto confirm) ===");
-        $this->line("curl -X POST http://127.0.0.1:8000/api/resources/2/bookings -H 'Content-Type: application/json' -d '{\"start\":\"2025-10-01 10:30:00\",\"end\":\"2025-10-01 11:00:00\"}'");
-        $this->newLine();
+        $this->line("Создать бронь:");
+        $this->line("curl -X POST http://localhost/api/resources/1/bookings -d 'start=2025-10-08 10:00&end=2025-10-08 11:00'");
 
-        $this->info("=== Номер 200 (fixed, group booking) ===");
-        $this->line("curl -X POST http://127.0.0.1:8000/api/resources/3/bookings -H 'Content-Type: application/json' -d '{\"start\":\"2025-10-01 08:00:00\",\"end\":\"2025-10-01 10:00:00\",\"participants_count\":3}'");
-        $this->line("curl -X POST http://127.0.0.1:8000/api/resources/3/bookings -H 'Content-Type: application/json' -d '{\"start\":\"2025-10-01 08:00:00\",\"end\":\"2025-10-01 10:00:00\",\"participants_count\":2}'");
-        $this->newLine();
+        $this->line("\nПодтвердить бронь:");
+        $this->line("curl -X POST http://localhost/api/bookings/1/confirm");
 
-        $this->info("=== Номер 404 (dynamic) ===");
-        $this->line("curl -X POST http://127.0.0.1:8000/api/resources/4/bookings -H 'Content-Type: application/json' -d '{\"start\":\"2025-10-01 09:00:00\",\"end\":\"2025-10-01 10:30:00\"}'");
+        $this->line("\nОтменить бронь:");
+        $this->line("curl -X POST http://localhost/api/bookings/1/cancel -d 'cancelled_by=client&reason=Неудобное время'");
+
+        $this->line("\nПеренести бронь:");
+        $this->line("curl -X POST http://localhost/api/bookings/1/reschedule -d 'new_start=2025-10-09 11:00&new_end=2025-10-09 12:00'");
+
+        return Command::SUCCESS;
     }
 }

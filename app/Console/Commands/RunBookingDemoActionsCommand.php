@@ -3,30 +3,42 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\Models\Resource;
+use App\Models\Booking;
 use App\Services\BookingService;
 use Carbon\Carbon;
 
 class RunBookingDemoActionsCommand extends Command
 {
     protected $signature = 'booking:run-demo-actions';
-    protected $description = 'Run demo scenario: create, confirm, cancel, reschedule booking';
+    protected $description = 'Имитация сценария: создание, подтверждение, перенос, отмена брони';
 
-    public function handle(BookingService $service)
+    public function handle(BookingService $service): int
     {
-        $this->info("Running demo actions...");
+        $this->info('🔹 Запуск демонстрации бронирования...');
 
-        $ivan = Resource::find(1);
-        $booking = $service->createBooking($ivan, Carbon::parse('2025-10-01 10:00:00'), Carbon::parse('2025-10-01 11:00:00'));
-        $this->info("Created booking #{$booking->id} (pending)");
+        $booking = Booking::first();
+        if (!$booking) {
+            $this->error('Нет броней. Сначала выполните php artisan booking:seed-demo');
+            return Command::FAILURE;
+        }
 
-        $service->confirmBooking($booking);
-        $this->info("Confirmed booking #{$booking->id}");
+        if ($booking->status === 'pending_confirmation') {
+            $this->info('✅ Подтверждение брони...');
+            $service->confirmBooking($booking);
+        }
 
-        $service->rescheduleBooking($booking, Carbon::parse('2025-10-02 11:00:00'), Carbon::parse('2025-10-02 12:00:00'));
-        $this->info("Rescheduled booking #{$booking->id}");
+        $this->info('🔄 Перенос брони...');
+        $service->rescheduleBooking(
+            $booking,
+            Carbon::parse($booking->start)->addDay(),
+            Carbon::parse($booking->end)->addDay(),
+            'admin'
+        );
 
-        $service->cancelBooking($booking, 'client', 'Client changed mind');
-        $this->info("Cancelled booking #{$booking->id}");
+        $this->info('❌ Отмена брони...');
+        $service->cancelBooking($booking, 'client', 'Клиент передумал');
+
+        $this->info('🎯 Демонстрация завершена. Проверяйте storage/logs/booking.log');
+        return Command::SUCCESS;
     }
 }

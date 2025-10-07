@@ -6,7 +6,9 @@ use App\Models\Resource;
 use App\Models\Booking;
 use App\Services\BookingService;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Carbon\Carbon;
+use Exception;
 
 class BookingController extends Controller
 {
@@ -17,49 +19,69 @@ class BookingController extends Controller
         $this->service = $service;
     }
 
-    public function store(Request $request, Resource $resource)
+    public function store(Request $request, $resourceId): JsonResponse
     {
-        $data = $request->validate([
-            'start' => 'required|date',
-            'end' => 'required|date|after:start',
-            'participants_count' => 'nullable|integer|min:1'
-        ]);
+        try {
+            $resource = Resource::findOrFail($resourceId);
+            $start = Carbon::parse($request->input('start'));
+            $end = Carbon::parse($request->input('end'));
 
-        $booking = $this->service->createBooking(
-            $resource,
-            Carbon::parse($data['start']),
-            Carbon::parse($data['end']),
-            $resource->resource_config['max_participants'] !== null,
-            $data['participants_count'] ?? 1
-        );
+            $booking = $this->service->createBooking(
+                $resource,
+                $start,
+                $end,
+                $request->boolean('is_group_booking', false)
+            );
 
-        return response()->json($booking, 201);
+            return response()->json($booking, 201);
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 422);
+        }
     }
 
-    public function confirm(Booking $booking)
+    public function confirm($id): JsonResponse
     {
-        $this->service->confirmBooking($booking);
-        return response()->json($booking);
+        try {
+            $booking = Booking::findOrFail($id);
+            $confirmed = $this->service->confirmBooking($booking);
+            return response()->json($confirmed);
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 422);
+        }
     }
 
-    public function cancel(Request $request, Booking $booking)
+    public function cancel(Request $request, $id): JsonResponse
     {
-        $data = $request->validate(['reason' => 'nullable|string']);
-        $this->service->cancelBooking($booking, 'client', $data['reason'] ?? null);
-        return response()->json($booking);
+        try {
+            $booking = Booking::findOrFail($id);
+            $cancelled = $this->service->cancelBooking(
+                $booking,
+                $request->input('cancelled_by', 'client'),
+                $request->input('reason')
+            );
+            return response()->json($cancelled);
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 422);
+        }
     }
 
-    public function reschedule(Request $request, Booking $booking)
+    public function reschedule(Request $request, $id): JsonResponse
     {
-        $data = $request->validate([
-            'new_start' => 'required|date',
-            'new_end' => 'required|date|after:new_start'
-        ]);
-        $this->service->rescheduleBooking(
-            $booking,
-            Carbon::parse($data['new_start']),
-            Carbon::parse($data['new_end'])
-        );
-        return response()->json($booking);
+        try {
+            $booking = Booking::findOrFail($id);
+            $newStart = Carbon::parse($request->input('new_start'));
+            $newEnd = Carbon::parse($request->input('new_end'));
+
+            $rescheduled = $this->service->rescheduleBooking(
+                $booking,
+                $newStart,
+                $newEnd,
+                $request->input('requested_by', 'client')
+            );
+
+            return response()->json($rescheduled);
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 422);
+        }
     }
 }
