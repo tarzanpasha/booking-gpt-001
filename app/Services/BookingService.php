@@ -8,7 +8,8 @@ use App\Events\{
     BookingPendingConfirmation,
     BookingConfirmed,
     BookingCancelled,
-    BookingRescheduled
+    BookingRescheduled,
+    BookingRejected
 };
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -98,6 +99,26 @@ class BookingService
         $this->log('✅ Бронирование подтверждено', ['booking_id' => $booking->id]);
         event(new BookingConfirmed($booking));
 
+        return $booking;
+    }
+
+    public function rejectBooking(Booking $booking, string $reason = null): Booking
+    {
+        $this->log('🔹 rejectBooking() вызван', [
+            'booking_id' => $booking->id,
+            'reason' => $reason,
+        ]);
+
+        if ($booking->status !== 'pending_confirmation') {
+            throw new Exception("Можно отклонить только брони в ожидании подтверждения");
+        }
+
+        $booking->update(['status' => 'rejected', 'reason' => $reason]);
+        $this->log('🚫 Бронирование отклонено', [
+            'booking_id' => $booking->id,
+            'reason' => $reason,
+        ]);
+        event(new BookingRejected($booking));
         return $booking;
     }
 

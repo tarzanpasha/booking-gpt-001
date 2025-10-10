@@ -53,4 +53,3 @@ php artisan booking:seed-demo --fresh
 php artisan booking:run-demo-actions
 php artisan booking:export-json
 tail -n 20 storage/logs/booking.log
-

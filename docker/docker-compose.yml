@@ -1,0 +1,33 @@
+version: '3.1'
+
+networks:
+  backend:
+    driver: bridge
+
+services:
+  gpt:
+    image: mysql:8.0
+    container_name: gpt
+    volumes:
+      - ./data/gpt:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=gpt
+      - MYSQL_DATABASE=gpt
+      - MYSQL_USER=gpt
+      - MYSQL_PASSWORD=gpt
+    ports:
+      - "8006:3306"
+    networks:
+      - backend
+  phpmyadmin_gpt:
+    container_name: phpmyadmin_gpt
+    image: phpmyadmin
+    restart: always
+    ports:
+      - "8093:80"
+    environment:
+      - PMA_HOST=gpt
+    depends_on:
+      - gpt
+    networks:
+      - backend
